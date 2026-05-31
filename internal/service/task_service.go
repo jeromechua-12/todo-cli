@@ -151,3 +151,11 @@ func (s *TaskService) UpdateTaskStatus(id int, status string) error {
 	}
 	return s.store.UpdateTask(taskToUpdate)
 }
+
+// delete a task
+func (s *TaskService) DeleteTask(id int) error {
+	if id <= 0 {
+		return fmt.Errorf("task id cannot be less than 1")
+	}
+	return s.store.Delete(id)
+}

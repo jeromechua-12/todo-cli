@@ -478,3 +478,49 @@ func TestUpdateTask(t *testing.T) {
 		})
 	}
 }
+
+func TestDeleteTask(t *testing.T) {
+	service := initService(t)
+
+	tests := []struct{
+		name string
+		inputID int
+		expectError bool
+	}{
+		{
+			name: "valid id deleted",
+			inputID: 4,
+			expectError: false,
+		},
+		{
+			name: "no id to delete",
+			inputID: 999,
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := service.DeleteTask(tt.inputID)
+
+			// test for expected errors
+			if tt.expectError {
+				if err == nil {
+					t.Errorf("expected error for input id %d, but got none", tt.inputID)
+				}
+				return
+			}
+
+			// test for unexpected errors
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			// check if actually deleted
+			_, err = service.GetTaskByID(tt.inputID)
+			if err == nil {
+				t.Errorf("expected error when finding deleted task id but gone none")
+			}
+		})
+	}
+}

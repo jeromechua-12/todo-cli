@@ -15,7 +15,6 @@ func NewSqliteTaskStorage(db *sql.DB) *SqliteTaskStorage {
 	return &SqliteTaskStorage{db}
 }
 
-
 // insert new task into datbase
 func (s *SqliteTaskStorage) Add(t task.Task) error {
 	query := `
@@ -111,5 +110,17 @@ func (s *SqliteTaskStorage) UpdateTask(t *task.Task) error {
 }
 
 func (s *SqliteTaskStorage) Delete(id int) error {
+	query := "DELETE FROM todo WHERE id = ?"
+	result, err := s.db.Exec(query, id)
+	if err != nil {
+		return fmt.Errorf("error deleting task: %v", err)
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("no task id %d", id)
+	}
 	return nil
 }
