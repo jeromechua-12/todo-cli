@@ -14,7 +14,6 @@ type TaskStorage interface {
 	GetAll() ([]task.Task, error)
 	GetByStatus(task.Status) ([]task.Task, error)
 	UpdateTask(t *task.Task) error
-	UpdateStatus(t *task.Task) error
 	Delete(id int) error
 }
 
@@ -122,6 +121,31 @@ func (s *TaskService) UpdateTask(id int, newDesc *string, newDeadline *string) e
 	taskToUpdate.UpdatedAt = &updateTime
 
 	// validate new fields
+	if err := task.ValidateTask(*taskToUpdate); err != nil {
+		return fmt.Errorf("unable to update task: %v", err)
+	}
+	return s.store.UpdateTask(taskToUpdate)
+}
+
+// update task's status
+func (s *TaskService) UpdateTaskStatus(id int, status string) error {
+	updateTime := time.Now()  // set update time
+
+	taskToUpdate, err := s.GetTaskByID(id)
+	if err != nil {
+		return fmt.Errorf("unable to update task: %v", err)
+	}
+
+	// validate status
+	parsedStatus, err := task.ParseStatus(status)
+	if err != nil {
+		return fmt.Errorf("unable to update status: %v", err)
+	}
+
+	// modify task's fields and validate
+	taskToUpdate.Status = parsedStatus
+	taskToUpdate.UpdatedAt = &updateTime
+
 	if err := task.ValidateTask(*taskToUpdate); err != nil {
 		return fmt.Errorf("unable to update task: %v", err)
 	}

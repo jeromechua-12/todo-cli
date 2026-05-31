@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jeromechua-12/todo-cli/internal/task"
 	"github.com/jeromechua-12/todo-cli/internal/storage"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -356,9 +357,10 @@ func TestUpdateTask(t *testing.T) {
 	validDesc := "new task name"
 	validDeadline := "2026-10-31 10:00"
 	validParsedDeadline := time.Date(2026, 10, 31, 10, 0, 0, 0, time.Local)
+	validStatus := "todo"
 
 	invalidID := 999
-	invalidDesc := ""
+	invalidStatus := "completed"
 
 	var emptyDesc *string
 	var emptyDeadline *string
@@ -369,6 +371,7 @@ func TestUpdateTask(t *testing.T) {
 		idInput int
 		descInput *string
 		deadlineInput *string
+		statusInput *string
 		parsedDeadline time.Time
 		expectError bool
 	}{
@@ -397,10 +400,14 @@ func TestUpdateTask(t *testing.T) {
 			expectError: false,
 		},
 		{
+			name: "valid status update",
+			idInput: 1,
+			statusInput: &validStatus,
+			expectError: false,
+		},
+		{
 			name: "invalid id",
 			idInput: invalidID,
-			descInput: emptyDesc,
-			deadlineInput: emptyDeadline,
 			expectError: true,
 		},
 		{
@@ -411,18 +418,23 @@ func TestUpdateTask(t *testing.T) {
 			expectError: true,
 		},
 		{
-			name: "invalid desc",
+			name: "invalid status",
 			idInput: 1,
-			descInput: &invalidDesc,
-			deadlineInput: &validDeadline,
-			parsedDeadline: validParsedDeadline,
+			statusInput: &invalidStatus,
 			expectError: true,
 		},
 	}
 
 	for _, tt := range tests {
+		var err error
+
+		// 2 possible methods to run: update desc/deadline or update status
 		t.Run(tt.name, func(t *testing.T) {
-			err := service.UpdateTask(tt.idInput, tt.descInput, tt.deadlineInput)
+			if tt.statusInput != nil {
+				err = service.UpdateTaskStatus(tt.idInput, *tt.statusInput)
+			} else {
+				err = service.UpdateTask(tt.idInput, tt.descInput, tt.deadlineInput)
+			}
 
 			// test for expected errors
 			if tt.expectError {
@@ -442,7 +454,7 @@ func TestUpdateTask(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error fetching task %d: %v", tt.idInput, err)
 			}
-			// test if desc or deadline were updated if not nil
+			// test for desc and deadline update
 			if tt.descInput != nil {
 				if tk.Desc != *tt.descInput {
 					t.Errorf("expected desc %q, got %q", *tt.descInput, tk.Desc)
@@ -453,7 +465,13 @@ func TestUpdateTask(t *testing.T) {
 					t.Errorf("expected deadline %q, got %q", tt.parsedDeadline, tk.Deadline)
 				}
 			}
-			// test for updateTime
+			// test for status update
+			if tt.statusInput != nil {
+				if tk.Status != task.Status(*tt.statusInput) {
+					t.Errorf("expected status %q, got %q", *tt.statusInput, tk.Status)
+				}
+			}
+			// test if updateTime was updated
 			if tk.UpdatedAt == nil {
 					t.Errorf("expected updatedAt to be non-nil")
 			}

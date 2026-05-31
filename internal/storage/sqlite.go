@@ -110,10 +110,6 @@ func (s *SqliteTaskStorage) UpdateTask(t *task.Task) error {
 	return nil
 }
 
-func (s *SqliteTaskStorage) UpdateStatus(t *task.Task) error {
-	return nil
-}
-
 func (s *SqliteTaskStorage) Delete(id int) error {
 	return nil
 }
