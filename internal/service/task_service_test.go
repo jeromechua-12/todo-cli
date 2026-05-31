@@ -95,10 +95,10 @@ func initService(t *testing.T) *TaskService {
 	_, err = db.Exec(`
 	INSERT INTO todo (desc, status, deadline, created_at, updated_at)
 	VALUES
-		("task 1", "todo", NULL, CURRENT_TIMESTAMP, NULL),
-		("task 2", "todo", NULL, CURRENT_TIMESTAMP, NULL),
-		("task 3", "in-progress", DATETIME("2026-12-31 23:59"), CURRENT_TIMESTAMP, NULL),
-		("task 4", "done", NULL, CURRENT_TIMESTAMP, DATETIME("2026-06-01 15:00"));
+	("task 1", "todo", NULL, CURRENT_TIMESTAMP, NULL),
+	("task 2", "todo", NULL, CURRENT_TIMESTAMP, NULL),
+	("task 3", "in-progress", DATETIME("2026-12-31 23:59"), CURRENT_TIMESTAMP, NULL),
+	("task 4", "done", NULL, CURRENT_TIMESTAMP, DATETIME("2026-06-01 15:00"));
 	`)
 	if err != nil {
 		t.Fatal(err)
@@ -345,6 +345,117 @@ func TestGetByStatus(t *testing.T) {
 				if !queried {
 					t.Errorf("expected id %d to be fethced, but not", wantID)
 				}
+			}
+		})
+	}
+}
+
+func TestUpdateTask(t *testing.T) {
+	service := initService(t)
+
+	validDesc := "new task name"
+	validDeadline := "2026-10-31 10:00"
+	validParsedDeadline := time.Date(2026, 10, 31, 10, 0, 0, 0, time.Local)
+
+	invalidID := 999
+	invalidDesc := ""
+
+	var emptyDesc *string
+	var emptyDeadline *string
+
+
+	tests := []struct{
+		name string
+		idInput int
+		descInput *string
+		deadlineInput *string
+		parsedDeadline time.Time
+		expectError bool
+	}{
+		{
+			name: "valid update with both desc and deadline",
+			idInput: 1,
+			descInput: &validDesc,
+			deadlineInput: &validDeadline,
+			parsedDeadline: validParsedDeadline,
+			expectError: false,
+		},
+		{
+			name: "valid update without desc",
+			idInput: 2,
+			descInput: emptyDesc,
+			deadlineInput: &validDeadline,
+			parsedDeadline: validParsedDeadline,
+			expectError: false,
+		},
+		{
+			name: "valid update without deadline",
+			idInput: 3,
+			descInput: &validDesc,
+			deadlineInput: emptyDeadline,
+			parsedDeadline: validParsedDeadline,
+			expectError: false,
+		},
+		{
+			name: "invalid id",
+			idInput: invalidID,
+			descInput: emptyDesc,
+			deadlineInput: emptyDeadline,
+			expectError: true,
+		},
+		{
+			name: "invalid update with no fields",
+			idInput: 1,
+			descInput: emptyDesc,
+			deadlineInput: emptyDeadline,
+			expectError: true,
+		},
+		{
+			name: "invalid desc",
+			idInput: 1,
+			descInput: &invalidDesc,
+			deadlineInput: &validDeadline,
+			parsedDeadline: validParsedDeadline,
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := service.UpdateTask(tt.idInput, tt.descInput, tt.deadlineInput)
+
+			// test for expected errors
+			if tt.expectError {
+				if err == nil {
+					t.Errorf("expected error for %q, but got none", tt.name)
+				}
+				return
+			}
+
+			// test for unexpected errors
+			if err != nil {
+				t.Fatalf("unexpected error for %q: %v", tt.name, err)
+			}
+
+			// test if fields actually got updated
+			tk, err := service.GetTaskByID(tt.idInput)
+			if err != nil {
+				t.Fatalf("unexpected error fetching task %d: %v", tt.idInput, err)
+			}
+			// test if desc or deadline were updated if not nil
+			if tt.descInput != nil {
+				if tk.Desc != *tt.descInput {
+					t.Errorf("expected desc %q, got %q", *tt.descInput, tk.Desc)
+				}
+			}
+			if tt.deadlineInput != nil {
+				if !tk.Deadline.Equal(tt.parsedDeadline) {
+					t.Errorf("expected deadline %q, got %q", tt.parsedDeadline, tk.Deadline)
+				}
+			}
+			// test for updateTime
+			if tk.UpdatedAt == nil {
+					t.Errorf("expected updatedAt to be non-nil")
 			}
 		})
 	}

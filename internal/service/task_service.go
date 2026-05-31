@@ -91,3 +91,39 @@ func (s *TaskService) GetTasksByStatus(status string) ([]task.Task, error) {
 	}
 	return s.store.GetByStatus(parsedStatus)
 }
+
+// update task's desc or deadline
+func (s *TaskService) UpdateTask(id int, newDesc *string, newDeadline *string) error {
+	updateTime := time.Now()  // set update time
+
+	taskToUpdate, err := s.GetTaskByID(id)
+	if err != nil {
+		return fmt.Errorf("unable to update task: %v", err)
+	}
+
+	// check at least one field is provided
+	if newDesc == nil && newDeadline == nil {
+		return fmt.Errorf("no new values provided for updating")
+	}
+
+	// parse deadline
+	parsedDeadline, err := parseDateString(newDeadline)
+	if err != nil {
+		return fmt.Errorf("unable to update task: %v", err)
+	}
+
+	// modify task's fields and validate
+	if newDesc != nil {
+		taskToUpdate.Desc = *newDesc
+	}
+	if newDeadline != nil {
+		taskToUpdate.Deadline = parsedDeadline
+	}
+	taskToUpdate.UpdatedAt = &updateTime
+
+	// validate new fields
+	if err := task.ValidateTask(*taskToUpdate); err != nil {
+		return fmt.Errorf("unable to update task: %v", err)
+	}
+	return s.store.UpdateTask(taskToUpdate)
+}

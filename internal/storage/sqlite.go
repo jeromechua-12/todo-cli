@@ -93,6 +93,20 @@ func (s *SqliteTaskStorage) GetByStatus(status task.Status) ([]task.Task, error)
 }
 
 func (s *SqliteTaskStorage) UpdateTask(t *task.Task) error {
+	query := `
+	UPDATE todo
+	SET
+		desc = ?,
+		status = ?,
+		deadline = ?,
+		created_at = ?,
+		updated_at = ?
+	WHERE id = ?;
+	`
+	_, err := s.db.Exec(query, t.Desc, t.Status, *t.Deadline, t.CreatedAt, *t.UpdatedAt, t.ID)
+	if err != nil {
+		return fmt.Errorf("error updating task: %v", err)
+	}
 	return nil
 }
 
