@@ -258,3 +258,94 @@ func TestGetAllTasks(t *testing.T) {
 		}
 	}
 }
+
+func TestGetByStatus(t *testing.T) {
+	service := initService(t)
+
+	invalidStatus := "completed"
+	emptyStatus := ""
+
+	tests := []struct{
+		name string
+		inputStatus string
+		expectedNums int
+		expectedIDs map[int]bool
+		expectError bool
+	}{
+		{
+			name: "valid todo",
+			inputStatus: "todo",
+			expectedNums: 2,
+			expectedIDs: map[int]bool{1: false, 2: false},
+			expectError: false,
+
+		},
+		{
+			name: "valid inProgress",
+			inputStatus: "in-progress",
+			expectedNums: 1,
+			expectedIDs: map[int]bool{3: false},
+			expectError: false,
+		},
+		{
+			name: "valid done",
+			inputStatus: "done",
+			expectedNums: 1,
+			expectedIDs: map[int]bool{4: false},
+			expectError: false,
+		},
+		{
+			name: "empty status",
+			expectedNums: 0,
+			expectedIDs: nil,
+			inputStatus: emptyStatus,
+			expectError: true,
+		},
+		{
+			name: "invalid status",
+			expectedNums: 0,
+			expectedIDs: nil,
+			inputStatus: invalidStatus,
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tasks, err := service.GetTasksByStatus(tt.inputStatus)
+
+			// test for expected errors
+			if tt.expectError {
+				if err == nil {
+					t.Errorf("expected error for %q, but got none", tt.name)
+				}
+				return
+			}
+
+			// test for unexpected errors
+			if err != nil {
+				t.Fatalf("unexpected error for %q: %v", tt.name, err)
+			}
+
+			// test for correct of rows queried
+			if len(tasks) != tt.expectedNums {
+				t.Errorf("expected %d rows, got %d", tt.expectedNums, len(tasks))
+			}
+
+			// test for correct ids queried
+			for _, tk := range tasks {
+				_, ok := tt.expectedIDs[tk.ID]
+				if !ok {
+					t.Errorf("unexpected id %d fetched", tk.ID)
+				} else {
+					tt.expectedIDs[tk.ID] = true
+				}
+			}
+			for wantID, queried := range tt.expectedIDs {
+				if !queried {
+					t.Errorf("expected id %d to be fethced, but not", wantID)
+				}
+			}
+		})
+	}
+}

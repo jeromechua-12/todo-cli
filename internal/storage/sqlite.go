@@ -69,8 +69,27 @@ func (s *SqliteTaskStorage) GetAll() ([]task.Task, error) {
 	return tasks, nil
 }
 
-func (s *SqliteTaskStorage) GetByStatus(task.Status) ([]task.Task, error) {
-	return nil, nil
+func (s *SqliteTaskStorage) GetByStatus(status task.Status) ([]task.Task, error) {
+	var tasks []task.Task
+
+	query := "SELECT * FROM todo where status = ?"
+	rows, err := s.db.Query(query, status)
+	if err != nil {
+		return nil, fmt.Errorf("error fetching tasks: %v", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var t task.Task
+		err := rows.Scan(&t.ID, &t.Desc, &t.Status, &t.Deadline, &t.CreatedAt, &t.UpdatedAt)
+		if err != nil {
+			return nil, fmt.Errorf("error fetching tasks: %v", err)
+		}
+		tasks = append(tasks, t)
+	}
+	if err :=  rows.Err(); err != nil {
+		return nil, fmt.Errorf("error fetching tasks: %v", err)
+	}
+	return tasks, nil
 }
 
 func (s *SqliteTaskStorage) UpdateTask(t *task.Task) error {

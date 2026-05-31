@@ -82,3 +82,12 @@ func (s *TaskService) GetTaskByID(id int) (*task.Task, error) {
 func (s *TaskService) GetAllTasks() ([]task.Task, error) {
 	return s.store.GetAll()
 }
+
+// get task by status
+func (s *TaskService) GetTasksByStatus(status string) ([]task.Task, error) {
+	parsedStatus, err := task.ParseStatus(status)
+	if err != nil {
+		return nil, err
+	}
+	return s.store.GetByStatus(parsedStatus)
+}
