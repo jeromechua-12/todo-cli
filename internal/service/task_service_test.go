@@ -1,13 +1,12 @@
 package service
 
 import (
+	"database/sql"
 	"testing"
 	"time"
-	"database/sql"
 
-	_ "github.com/mattn/go-sqlite3"
-	_ "github.com/jeromechua-12/todo-cli/internal/task"
 	"github.com/jeromechua-12/todo-cli/internal/storage"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func TestParseDateString(t *testing.T) {
@@ -67,6 +66,7 @@ func TestParseDateString(t *testing.T) {
 }
 
 func initService(t *testing.T) *TaskService {
+	// in memory database
 	db, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
 		t.Fatal(err)
@@ -76,6 +76,7 @@ func initService(t *testing.T) *TaskService {
 		db.Close()
 	})
 
+	// create table
 	_, err = db.Exec(`
 	CREATE TABLE IF NOT EXISTS todo (
 		id INTEGER PRIMARY KEY,
@@ -85,6 +86,19 @@ func initService(t *testing.T) *TaskService {
 		created_at DATETIME NOT NULL,
 		updated_at DATETIME
 	)
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// insert sample rows
+	_, err = db.Exec(`
+	INSERT INTO todo (desc, status, deadline, created_at, updated_at)
+	VALUES
+		("task 1", "todo", NULL, CURRENT_TIMESTAMP, NULL),
+		("task 2", "todo", NULL, CURRENT_TIMESTAMP, NULL),
+		("task 3", "in-progress", DATETIME("2026-12-31 23:59"), CURRENT_TIMESTAMP, NULL),
+		("task 4", "done", NULL, CURRENT_TIMESTAMP, DATETIME("2026-06-01 15:00"));
 	`)
 	if err != nil {
 		t.Fatal(err)
@@ -148,6 +162,60 @@ func TestAddTask(t *testing.T) {
 			// test for unexpected errors
 			if err != nil {
 				t.Fatalf("unexpected error for %q: %v", tt.name, err)
+			}
+		})
+	}
+}
+
+func TestGetTaskByID(t *testing.T) {
+	service := initService(t)
+
+	validID := 1
+	invalidID := 999
+	negativeID := -1
+
+	tests := []struct{
+		name string
+		inputID int
+		expectError bool
+	}{
+		{
+			name: "valid id",
+			inputID: validID,
+			expectError: false,
+		},
+		{
+			name: "negative id",
+			inputID: negativeID,
+			expectError: true,
+		},
+		{
+			name: "id not found",
+			inputID: invalidID,
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotTask, err := service.GetTaskByID(tt.inputID)
+
+			// test for expected errors
+			if tt.expectError {
+				if err == nil {
+					t.Errorf("expected an error for %q, but got none", tt.name)
+				}
+				return
+			}
+
+			// test for unexpected errors
+			if err != nil {
+				t.Fatalf("unexpected error for input %d: %v", tt.inputID, err)
+			}
+
+			// test for correct id
+			if gotTask.ID != tt.inputID {
+				t.Errorf("expected id %d, got %d", tt.inputID, gotTask.ID)
 			}
 		})
 	}

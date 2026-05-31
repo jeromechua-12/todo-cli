@@ -69,3 +69,11 @@ func (s *TaskService) AddTask(desc string, deadline *string) error {
 	}
 	return s.store.Add(task)
 }
+
+// get task by ID
+func (s *TaskService) GetTaskByID(id int) (*task.Task, error) {
+	if id <= 0 {
+		return nil, fmt.Errorf("task id cannot be less than 1")
+	}
+	return s.store.GetByID(id)
+}

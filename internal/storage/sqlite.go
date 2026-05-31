@@ -32,7 +32,18 @@ func (s *SqliteTaskStorage) Add(t task.Task) error {
 
 // query task by id from database
 func (s *SqliteTaskStorage) GetByID(id int) (*task.Task, error) {
-	return nil, nil
+	var t task.Task
+
+	query := "SELECT * FROM todo WHERE id = ?"
+	row := s.db.QueryRow(query, id)
+	err := row.Scan(&t.ID, &t.Desc, &t.Status, &t.Deadline, &t.CreatedAt, &t.UpdatedAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return &task.Task{}, fmt.Errorf("no task id %d", id)
+		}
+		return &task.Task{}, fmt.Errorf("error fetching task: %s", err)
+	}
+	return &t, nil
 }
 
 func (s *SqliteTaskStorage) GetAll() ([]task.Task, error) {
