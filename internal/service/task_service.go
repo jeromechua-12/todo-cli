@@ -77,3 +77,8 @@ func (s *TaskService) GetTaskByID(id int) (*task.Task, error) {
 	}
 	return s.store.GetByID(id)
 }
+
+// get all tasks
+func (s *TaskService) GetAllTasks() ([]task.Task, error) {
+	return s.store.GetAll()
+}

@@ -220,3 +220,41 @@ func TestGetTaskByID(t *testing.T) {
 		})
 	}
 }
+
+func TestGetAllTasks(t *testing.T) {
+	service := initService(t)
+
+	expectedNum := 4
+	expectedIDs := map[int]bool {
+		1: false, 
+		2: false, 
+		3: false, 
+		4: false, 
+	}
+
+	tasks, err := service.GetAllTasks()
+	if err != nil {
+		t.Fatalf("unexpected error for fetching all tasks: %v", err)
+	}
+
+	// test for number of tasks fetch
+	if len(tasks) != expectedNum {
+		t.Errorf("expected %d rows, got %d", expectedNum, len(tasks))
+
+	}
+
+	// test for correct tasks id and desc
+	for _, tk := range tasks {
+		_, ok := expectedIDs[tk.ID]
+		if !ok {
+			t.Errorf("unexpected id %d fetched", tk.ID)
+		} else {
+			expectedIDs[tk.ID] = true
+		}
+	}
+	for wantID, queried := range expectedIDs {
+		if !queried {
+			t.Errorf("expected id %d to be fethced, but not", wantID)
+		}
+	}
+}
