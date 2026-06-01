@@ -10,7 +10,7 @@ import (
 
 type TaskStorage interface {
 	GetByID(id int) (*task.Task, error)
-	Add(t task.Task) error
+	Add(t task.Task) (int, error)
 	GetAll() ([]task.Task, error)
 	GetByStatus(task.Status) ([]task.Task, error)
 	UpdateTask(t *task.Task) error
@@ -57,14 +57,14 @@ func parseDateString(date *string) (*time.Time, error) {
 }
 
 // adds new task
-func (s *TaskService) AddTask(desc string, deadline *string) error {
+func (s *TaskService) AddTask(desc string, deadline *string) (int, error) {
 	parsedDeadline, err := parseDateString(deadline)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	task, err := task.NewTask(desc, parsedDeadline)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	return s.store.Add(task)
 }

@@ -16,17 +16,20 @@ func NewSqliteTaskStorage(db *sql.DB) *SqliteTaskStorage {
 }
 
 // insert new task into datbase
-func (s *SqliteTaskStorage) Add(t task.Task) error {
+func (s *SqliteTaskStorage) Add(t task.Task) (int, error) {
 	query := `
 	INSERT INTO todo (desc, status, deadline, created_at, updated_at)
 	VALUES (?, ?, ?, ?, ?)
 	`
 	result, err := s.db.Exec(query, t.Desc, t.Status, t.Deadline, t.CreatedAt, t.UpdatedAt)
 	if err != nil {
-		return fmt.Errorf("error adding task: %v", err)
+		return 0, fmt.Errorf("error adding task: %v", err)
 	}
-	_, err = result.LastInsertId()
-	return nil
+	id, err := result.LastInsertId()
+	if err != nil {
+		return 0, err 
+	}
+	return int(id), nil
 }
 
 // query task by id from database

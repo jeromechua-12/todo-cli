@@ -119,18 +119,21 @@ func TestAddTask(t *testing.T) {
 		name string
 		descInput string
 		deadlineInput *string
+		expectedID int
 		expectError bool
 	}{
 		{
 			name: "valid desc without deadline",
 			descInput: validDesc,
 			deadlineInput: nil,
+			expectedID: 5,
 			expectError: false,
 		},
 		{
 			name: "valid desc and deadline",
 			descInput: validDesc,
 			deadlineInput: &validDeadline,
+			expectedID: 6,
 			expectError: false,
 		},
 		{
@@ -149,7 +152,7 @@ func TestAddTask(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := service.AddTask(tt.descInput, tt.deadlineInput)
+			id, err := service.AddTask(tt.descInput, tt.deadlineInput)
 
 			// test for expected errors
 			if tt.expectError {
@@ -163,6 +166,11 @@ func TestAddTask(t *testing.T) {
 			// test for unexpected errors
 			if err != nil {
 				t.Fatalf("unexpected error for %q: %v", tt.name, err)
+			}
+
+			// test for correct id
+			if id != tt.expectedID {
+				t.Errorf("expected id %d, but got %d", tt.expectedID, id)
 			}
 		})
 	}
