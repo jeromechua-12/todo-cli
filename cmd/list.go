@@ -32,9 +32,7 @@ Examples:
 			if err != nil {
 				return err
 			}
-			for _, tk := range tasks {
-				tk.Print()
-			}
+			task.Print(tasks)
 			return nil
 		},
 	}

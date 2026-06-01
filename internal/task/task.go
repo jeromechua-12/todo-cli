@@ -3,9 +3,11 @@ package task
 import (
 	"fmt"
 	"strings"
+	"strconv"
 	"time"
 	"os"
-	"text/tabwriter"
+
+	"github.com/olekukonko/tablewriter"
 )
 
 // enum for task status
@@ -58,24 +60,40 @@ func ValidateTask(t Task) error {
 }
 
 // prints out Task fields separated by a '|'
-func (t Task) Print() {
-	// format date to yyyy-mm-dd hh:mm layout
-	var deadline, updatedAt string
-	if t.Deadline != nil {
-		deadline = t.Deadline.Format("2006-01-02 15:04")
-	} else {
-		deadline = "<nil>"
-	}
-	if t.UpdatedAt!= nil {
-		updatedAt = t.UpdatedAt.Format("2006-01-02 15:04")
-	} else {
-		updatedAt = "<nil>"
-	}
-	createdAt := t.CreatedAt.Format("2006-01-02 15:04")
+func Print(tasks []Task) {
+	table := tablewriter.NewTable(os.Stdout)
+	table.Header("ID", "Description", "Status", "Deadline", "Created At", "Updated At")
 
-	w := tabwriter.NewWriter(os.Stdout, 3, 0, 0, ' ', tabwriter.AlignRight|tabwriter.Debug)
-	fmt.Fprintf(w, "%d\t%s\t%s\t%s\t%s\t%s\n", t.ID, t.Desc, t.Status, deadline, createdAt, updatedAt)
-	w.Flush()
+	// format and append tasks to table
+	for _, t := range tasks {
+		// format date to yyyy-mm-dd hh:mm layout
+		var deadline, createdAt, updatedAt string
+		if t.Deadline != nil {
+			deadline = t.Deadline.Format("2006-01-02 15:04")
+		} else {
+			deadline = "nil"
+		}
+		if t.UpdatedAt!= nil {
+			updatedAt = t.UpdatedAt.Format("2006-01-02 15:04")
+		} else {
+			updatedAt = "nil"
+		}
+		createdAt = t.CreatedAt.Format("2006-01-02 15:04")
+
+		table.Append([]string{
+			strconv.Itoa(t.ID),
+			t.Desc,
+			string(t.Status),
+			deadline,
+			createdAt,
+			updatedAt,
+		})
+	}
+
+	// render table
+	fmt.Println()
+	table.Render()
+	fmt.Println()
 }
 
 // parses a string to Status enum
