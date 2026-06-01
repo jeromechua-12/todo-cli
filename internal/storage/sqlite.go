@@ -105,7 +105,7 @@ func (s *SqliteTaskStorage) UpdateTask(t *task.Task) error {
 		updated_at = ?
 	WHERE id = ?;
 	`
-	_, err := s.db.Exec(query, t.Desc, t.Status, *t.Deadline, t.CreatedAt, *t.UpdatedAt, t.ID)
+	_, err := s.db.Exec(query, t.Desc, t.Status, t.Deadline, t.CreatedAt, t.UpdatedAt, t.ID)
 	if err != nil {
 		return fmt.Errorf("error updating task: %v", err)
 	}
