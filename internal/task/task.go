@@ -67,7 +67,7 @@ func (t Task) Print() {
 		deadline = "<nil>"
 	}
 	if t.UpdatedAt!= nil {
-		updatedAt = t.Deadline.Format("2006-01-02 15:04")
+		updatedAt = t.UpdatedAt.Format("2006-01-02 15:04")
 	} else {
 		updatedAt = "<nil>"
 	}
